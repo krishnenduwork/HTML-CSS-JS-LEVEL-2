@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizzWizz</title>
+    <style>
+        :root {
+            --background: linear-gradient(135deg, #71b7e6, #9b59b6);
+            --container-bg: #fff;
+            --text-color: #333;
+            --secondary-text: #555;
+            --button-bg: #9b59b6;
+            --button-hover: #8e44ad;
+            --option-bg: #f9f9f9;
+            --option-border: #ddd;
+            --option-hover: #e0e0e0;
+            --selected-option: #d3e4ff;
+            --selected-border: #71b7e6;
+            --correct-bg: #28a745;
+            --wrong-bg: #dc3545;
+            --progress-bar-bg: #e0e0e0;
+            --progress-bar-fill: #71b7e6;
+            --input-bg: #f9f9f9;
+            --input-border: #ddd;
+            --error-text: #dc3545;
+        }
+
+        [data-theme="dark"] {
+            --background: linear-gradient(135deg, #2c3e50, #4b0082);
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --secondary-text: #b0b0b0;
+            --button-bg: #7b1fa2;
+            --button-hover: #9c27b0;
+            --option-bg: #2e2e2e;
+            --option-border: #444;
+            --option-hover: #3e3e3e;
+            --selected-option: #3f51b5;
+            --selected-border: #5c6bc0;
+            --correct-bg: #2e7d32;
+            --wrong-bg: #c62828;
+            --progress-bar-bg: #444;
+            --progress-bar-fill: #5c6bc0;
+            --input-bg: #2e2e2e;
+            --input-border: #444;
+            --error-text: #ef5350;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--background);
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--container-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader h1 {
+            font-size: 2.5rem;
+            color: var(--text-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: var(--container-bg);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s ease-in;
+            display: none;
+        }
+
+        .container.visible {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .register-screen, .login-screen, .category-screen, .start-screen, .quiz, .result-screen {
+            text-align: center;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--secondary-text);
+        }
+
+        .btn {
+            background: var(--button-bg);
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s, transform 0.2s;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            background: var(--button-hover);
+            transform: scale(1.05);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .input {
+            padding: 10px;
+            font-size: 1rem;
+            width: 200px;
+            margin-bottom: 20px;
+            border: 1px solid var(--input-border);
+            border-radius: 5px;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--button-bg);
+        }
+
+        .error-message {
+            color: var(--error-text);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--button-bg);
+            cursor: pointer;
+            font-size: 1rem;
+            text-decoration: underline;
+        }
+
+        .link-btn:hover {
+            color: var(--button-hover);
+        }
+
+        .quiz h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .options {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .option {
+            background: var(--option-bg);
+            padding: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            border: 1px solid var(--option-border);
+            color: var(--text-color);
+        }
+
+        .option:hover {
+            background: var(--option-hover);
+            transform: scale(1.02);
+        }
+
+        .option.selected {
+            background: var(--selected-option);
+            border-color: var(--selected-border);
+        }
+
+        .option.correct {
+            background: var(--correct-bg);
+            color: #fff;
+            border-color: var(--correct-bg);
+        }
+
+        .option.wrong {
+            background: var(--wrong-bg);
+            color: #fff;
+            border-color: var(--wrong-bg);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .progress-container {
+            flex: 1;
+            margin-right: 20px;
+            text-align: left;
+        }
+
+        .progress-text {
+            font-size: 1rem;
+            color: var(--secondary-text);
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--progress-bar-bg);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--progress-bar-fill);
+            width: 0%;
+            transition: width 0.3s ease-in-out;
+        }
+
+        .result-screen h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .leaderboard, .answer-summary {
+            margin-top: 20px;
+            text-align: left;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .leaderboard h3, .answer-summary h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .leaderboard ul, .answer-summary ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .leaderboard li, .answer-summary li {
+            font-size: 1rem;
+            padding: 10px 0;
+            color: var(--secondary-text);
+            border-bottom: 1px solid var(--option-border);
+        }
+
+        .answer-summary li.correct {
+            color: var(--correct-bg);
+        }
+
+        .answer-summary li.wrong {
+            color: var(--wrong-bg);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+
+            .quiz h2 {
+                font-size: 1.2rem;
+            }
+
+            .option {
+                padding: 10px;
+            }
+
+            .progress-container {
+                margin-right: 10px;
+            }
+
+            .progress-bar {
+                height: 8px;
+            }
+
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+                font-size: 1rem;
+            }
+
+            .input {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .loader h1 {
+                font-size: 2rem;
+            }
+
+            .answer-summary li {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader" id="loader">
+        <h1>QuizzWizz</h1>
+    </div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
+    <div class="container" id="container">
+        <div class="register-screen" id="registerScreen" style="display: none;">
+            <h1>Register</h1>
+            <p>Create an account to start quizzing!</p>
+            <input type="text" class="input" id="registerUsername" placeholder="Username" maxlength="20">
+            <input type="password" class="input" id="registerPassword" placeholder="Password">
+            <p class="error-message" id="registerError"></p>
+            <button class="btn" id="registerBtn" onclick="registerUser()" disabled>Register</button>
+            <button class="link-btn" onclick="showLogin()">Already have an account? Login</button>
+        </div>
+        <div class="login-screen" id="loginScreen">
+            <h1>Login</h1>
+            <p>Sign in to access the quiz!</p>
+            <input type="text" class="input" id="loginUsername" placeholder="Username" maxlength="20">
+            <input type="password" class="input" id="loginPassword" placeholder="Password">
+            <p class="error-message" id="loginError"></p>
+            <button class="btn" id="loginBtn" onclick="loginUser()" disabled>Login</button>
+            <button class="link-btn" onclick="showRegister()">Don't have an account? Register</button>
+        </div>
+        <div class="category-screen" id="categoryScreen" style="display: none;">
+            <h1>Select a Category</h1>
+            <p>Choose a category to start the quiz!</p>
+            <button class="btn" onclick="selectCategory('Science')">Science</button>
+            <button class="btn" onclick="selectCategory('History')">History</button>
+            <button class="btn" onclick="selectCategory('Mythology')">Mythology</button>
+            <button class="btn" onclick="selectCategory('Mathematics')">Mathematics</button>
+        </div>
+        <div class="start-screen" id="startScreen" style="display: none;">
+            <h1>Welcome to QuizzWizz</h1>
+            <p>Test your knowledge with our fun quiz!</p>
+            <button class="btn" onclick="startQuiz()">Start Quiz</button>
+        </div>
+        <div class="quiz" id="quiz" style="display: none;">
+            <h2 id="question"></h2>
+            <div class="options" id="options"></div>
+            <div class="navigation">
+                <div class="progress-container">
+                    <div class="progress-text" id="progress"></div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                </div>
+                <button class="btn" id="nextBtn" onclick="nextQuestion()">Next</button>
+            </div>
+        </div>
+        <div class="result-screen" id="resultScreen" style="display: none;">
+            <h2>Quiz Completed!</h2>
+            <p id="result"></p>
+            <div class="answer-summary" id="answerSummary">
+                <h3>Your Answers</h3>
+                <ul id="answerSummaryList"></ul>
+            </div>
+            <div class="leaderboard" id="leaderboard">
+                <h3>Leaderboard</h3>
+                <ul id="leaderboardList"></ul>
+            </div>
+            <button class="btn" onclick="restartQuiz()">Restart Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = {
+            Science: [
+                { question: "What is the chemical symbol for water?", options: ["H2O", "CO2", "NaCl", "O2"], answer: "H2O" },
+                { question: "Which planet is closest to the Sun?", options: ["Venus", "Earth", "Mercury", "Mars"], answer: "Mercury" },
+                { question: "What gas do plants absorb from the atmosphere?", options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Helium"], answer: "Carbon Dioxide" },
+                { question: "What is the primary source of energy for Earth's climate system?", options: ["Sun", "Moon", "Geothermal", "Wind"], answer: "Sun" },
+                { question: "What is the powerhouse of the cell?", options: ["Nucleus", "Mitochondria", "Ribosome", "Golgi Apparatus"], answer: "Mitochondria" },
+                { question: "Which element has the atomic number 1?", options: ["Helium", "Hydrogen", "Lithium", "Beryllium"], answer: "Hydrogen" },
+                { question: "What type of bond involves the sharing of electrons?", options: ["Ionic", "Covalent", "Metallic", "Hydrogen"], answer: "Covalent" },
+                { question: "What is the unit of electric current?", options: ["Volt", "Ampere", "Ohm", "Watt"], answer: "Ampere" },
+                { question: "Which scientist proposed the theory of relativity?", options: ["Newton", "Einstein", "Galileo", "Tesla"], answer: "Einstein" },
+                { question: "What is the main source of energy for Earth's magnetic field?", options: ["Solar Wind", "Core Dynamo", "Tectonic Plates", "Atmospheric Pressure"], answer: "Core Dynamo" }
+            ],
+            History: [
+                { question: "Who was the founder of the Maurya Empire?", options: ["Ashoka", "Chandragupta Maurya", "Bindusara", "Chanakya"], answer: "Chandragupta Maurya" },
+                { question: "In which year did India gain independence from British rule?", options: ["1945", "1947", "1950", "1942"], answer: "1947" },
+                { question: "Which ancient Indian text is known as the science of statecraft?", options: ["Rigveda", "Arthashastra", "Mahabharata", "Upanishads"], answer: "Arthashastra" },
+                { question: "Who was the first woman Prime Minister of India?", options: ["Sonia Gandhi", "Indira Gandhi", "Pratibha Patil", "Sarojini Naidu"], answer: "Indira Gandhi" },
+                { question: "Which battle in 1757 marked the beginning of British dominance in India?", options: ["Battle of Plassey", "Battle of Panipat", "Battle of Buxar", "Battle of Wandiwash"], answer: "Battle of Plassey" },
+                { question: "Which Indian emperor is known for spreading Buddhism?", options: ["Harsha", "Ashoka", "Akbar", "Shivaji"], answer: "Ashoka" },
+                { question: "What was the capital of the Mughal Empire under Akbar?", options: ["Delhi", "Agra", "Fatehpur Sikri", "Lahore"], answer: "Fatehpur Sikri" },
+                { question: "Who led the Dandi Salt March in 1930?", options: ["Jawaharlal Nehru", "Mahatma Gandhi", "Subhas Chandra Bose", "Sardar Patel"], answer: "Mahatma Gandhi" },
+                { question: "Which dynasty built the Khajuraho temples?", options: ["Gupta", "Chandela", "Pallava", "Chola"], answer: "Chandela" },
+                { question: "Which movement aimed at complete independence for India in 1942?", options: ["Non-Cooperation", "Civil Disobedience", "Quit India", "Swadeshi"], answer: "Quit India" }
+            ],
+            Mythology: [
+                { question: "Who is the hero of the Ramayana?", options: ["Krishna", "Rama", "Arjuna", "Bhima"], answer: "Rama" },
+                { question: "Which demon king abducted Sita in the Ramayana?", options: ["Ravana", "Kumbhakarna", "Hiranyakashipu", "Mahishasura"], answer: "Ravana" },
+                { question: "In the Mahabharata, who was the charioteer of Arjuna?", options: ["Krishna", "Yudhishthira", "Bhishma", "Drona"], answer: "Krishna" },
+                { question: "Which Vedic god is known as the king of the gods?", options: ["Agni", "Indra", "Varuna", "Vayu"], answer: "Indra" },
+                { question: "Who is the goddess of wealth in Hindu mythology?", options: ["Saraswati", "Lakshmi", "Parvati", "Durga"], answer: "Lakshmi" },
+                { question: "Which avatar of Vishnu killed the demon Hiranyakashipu?", options: ["Varaha", "Narasimha", "Vamana", "Kurma"], answer: "Narasimha" },
+                { question: "What is the name of Shiva’s trident?", options: ["Sudarshana", "Trishula", "Vajra", "Pashupata"], answer: "Trishula" },
+                { question: "Who wrote the epic Mahabharata?", options: ["Valmiki", "Vyasa", "Tulsidas", "Kalidasa"], answer: "Vyasa" },
+                { question: "Which sacred river is personified as a goddess in Hinduism?", options: ["Yamuna", "Saraswati", "Ganga", "Narmada"], answer: "Ganga" },
+                { question: "Which monkey god is a devoted follower of Rama?", options: ["Hanuman", "Sugriva", "Vali", "Jambavan"], answer: "Hanuman" }
+            ],
+            Mathematics: [
+                { question: "What is 5 factorial (5!)?", options: ["120", "60", "20", "720"], answer: "120" },
+                { question: "What is the value of π (pi) to two decimal places?", options: ["3.12", "3.14", "3.16", "3.18"], answer: "3.14" },
+                { question: "What is the square root of 144?", options: ["10", "12", "14", "16"], answer: "12" },
+                { question: "What is the sum of angles in a triangle?", options: ["90°", "180°", "270°", "360°"], answer: "180°" },
+                { question: "What is 2 to the power of 5?", options: ["16", "32", "64", "128"], answer: "32" },
+                { question: "What is the value of x in the equation 2x + 3 = 11?", options: ["2", "3", "4", "5"], answer: "4" },
+                { question: "What is the formula for the area of a circle?", options: ["πr^2", "2πr", "πd", "r^2"], answer: "πr^2" },
+                { question: "What is the next number in the sequence 2, 4, 8, 16?", options: ["24", "28", "32", "36"], answer: "32" },
+                { question: "What is the slope of a line parallel to y = 2x + 3?", options: ["1", "2", "3", "4"], answer: "2" },
+                { question: "What is the value of sin(90°)?", options: ["0", "1", "1/2", "√2/2"], answer: "1" }
+            ]
+        };
+
+        let selectedCategory = '';
+        let shuffledQuestions = [];
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedOption = null;
+        let playerName = '';
+        let userAnswers = [];
+
+        window.onload = () => {
+            applySavedTheme();
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('container').classList.add('visible');
+                document.getElementById('loginScreen').style.display = 'block';
+            }, 2000);
+        };
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleIcon(newTheme);
+        }
+
+        function updateThemeToggleIcon(theme) {
+            document.getElementById('themeToggle').textContent = theme === 'light' ? '🌙' : '☀️';
+        }
+
+        function applySavedTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggleIcon(savedTheme);
+        }
+
+        function getUsers() {
+            return JSON.parse(localStorage.getItem('users')) || [];
+        }
+
+        function saveUsers(users) {
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function validateRegisterInputs() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            const registerBtn = document.getElementById('registerBtn');
+            registerBtn.disabled = username === '' || password === '';
+        }
+
+        function validateLoginInputs() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = username === '' || password === '';
+        }
+
+        function showRegister() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('registerScreen').style.display = 'block';
+            document.getElementById('registerUsername').value = '';
+            document.getElementById('registerPassword').value = '';
+            document.getElementById('registerError').style.display = 'none';
+            validateRegisterInputs();
+        }
+
+        function showLogin() {
+            document.getElementById('registerScreen').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+            validateLoginInputs();
+        }
+
+        function registerUser() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
+            const errorElement = document.getElementById('registerError');
+            const users = getUsers();
+
+            if (users.some(user => user.username === username)) {
+                errorElement.textContent = 'Username already exists!';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            users.push({ username, password });
+            saveUsers(users);
+            errorElement.textContent = 'Registration successful! Please login.';
+            errorElement.style.color = 'green';
+            errorElement.style.display = 'block';
+            setTimeout(showLogin, 1000);
+        }
+
+        function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorElement = document.getElementById('loginError');
+            const users = getUsers();
+
+            const user = users.find(user => user.username === username && user.password === password);
+            if (!user) {
+                errorElement.textContent = 'Invalid username or password!';
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            playerName = username;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('categoryScreen').style.display = 'block';
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function getLeaderboard() {
+            return JSON.parse(localStorage.getItem('leaderboard')) || [];
+        }
+
+        function saveLeaderboard(score, name) {
+            let leaderboard = getLeaderboard();
+            leaderboard.push({ name: name.trim(), score, category: selectedCategory });
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard = leaderboard.slice(0, 5);
+            localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+        }
+
+        function displayLeaderboard() {
+            const leaderboard = getLeaderboard();
+            const leaderboardList = document.getElementById('leaderboardList');
+            leaderboardList.innerHTML = '';
+            leaderboard.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.textContent = `#${index + 1}: ${entry.name} - ${entry.score}/10 (${entry.category})`;
+                leaderboardList.appendChild(li);
+            });
+        }
+
+        function displayAnswerSummary() {
+            const answerSummaryList = document.getElementById('answerSummaryList');
+            answerSummaryList.innerHTML = '';
+            shuffledQuestions.forEach((questionData, index) => {
+                const userAnswer = userAnswers[index] || "No answer";
+                const isCorrect = userAnswer === questionData.answer;
+                const li = document.createElement('li');
+                li.classList.add(isCorrect ? 'correct' : 'wrong');
+                li.innerHTML = `
+                    <strong>Question ${index + 1}: ${questionData.question}</strong><br>
+                    Your Answer: ${userAnswer}<br>
+                    Correct Answer: ${questionData.answer}<br>
+                    Status: ${isCorrect ? 'Correct' : 'Incorrect'}
+                `;
+                answerSummaryList.appendChild(li);
+            });
+        }
+
+        function updateProgressBar() {
+            const progressPercent = ((currentQuestion + 1) / shuffledQuestions.length) * 100;
+            document.getElementById('progressBarFill').style.width = `${progressPercent}%`;
+        }
+
+        function selectCategory(category) {
+            selectedCategory = category;
+            document.getElementById('categoryScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'block';
+        }
+
+        function startQuiz() {
+            userAnswers = [];
+            shuffledQuestions = shuffleArray([...questions[selectedCategory]]);
+            shuffledQuestions.forEach(q => {
+                q.options = shuffleArray([...q.options]);
+            });
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('quiz').style.display = 'block';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const questionData = shuffledQuestions[currentQuestion];
+            document.getElementById('question').textContent = questionData.question;
+            document.getElementById('progress').textContent = `Question ${currentQuestion + 1} of ${shuffledQuestions.length}`;
+
+            updateProgressBar();
+
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            questionData.options.forEach(option => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('option');
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectOption(option, optionElement);
+                optionsContainer.appendChild(optionElement);
+            });
+
+            document.getElementById('nextBtn').disabled = true;
+            selectedOption = null;
+        }
+
+        function selectOption(option, element) {
+            if (selectedOption) return;
+            selectedOption = option;
+            userAnswers[currentQuestion] = option;
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            document.getElementById('nextBtn').disabled = false;
+
+            const correctAnswer = shuffledQuestions[currentQuestion].answer;
+            document.querySelectorAll('.option').forEach(opt => {
+                if (opt.textContent === correctAnswer) {
+                    opt.classList.add('correct');
+                } else if (opt.textContent === option && option !== correctAnswer) {
+                    opt.classList.add('wrong');
+                }
+            });
+
+            if (option === correctAnswer) {
+                score++;
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < shuffledQuestions.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'block';
+            document.getElementById('result').textContent = `You scored ${score} out of ${shuffledQuestions.length}, ${playerName}!`;
+            saveLeaderboard(score, playerName);
+            displayLeaderboard();
+            displayAnswerSummary();
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            playerName = '';
+            selectedCategory = '';
+            userAnswers = [];
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('categoryScreen').style.display = 'none';
+            showLogin();
+        }
+
+    
+        document.getElementById('registerUsername').addEventListener('input', validateRegisterInputs);
+        document.getElementById('registerPassword').addEventListener('input', validateRegisterInputs);
+        document.getElementById('loginUsername').addEventListener('input', validateLoginInputs);
+        document.getElementById('loginPassword').addEventListener('input', validateLoginInputs);
+    </script>
+</body>
+</html>
