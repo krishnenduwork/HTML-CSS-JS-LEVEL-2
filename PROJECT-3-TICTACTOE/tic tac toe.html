@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe - AI Levels</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      margin: 0;
+      padding: 40px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+      font-size: 36px;
+    }
+
+    .controls {
+      margin: 10px 0;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      font-size: 16px;
+      margin: 5px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+
+    .cell {
+      background-color: white;
+      color: #333;
+      border-radius: 10px;
+      font-size: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .cell:hover {
+      background-color: #eee;
+    }
+
+    #status {
+      font-size: 20px;
+      margin-top: 15px;
+    }
+
+    #scoreboard {
+      margin: 15px 0;
+      font-size: 18px;
+    }
+
+    .score-box {
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 10px 20px;
+      display: inline-block;
+      margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Tic Tac Toe</h1>
+<div class="controls">
+  Difficulty:
+  <select id="difficulty">
+    <option value="easy">Easy (Random)</option>
+    <option value="medium">Medium (50/50)</option>
+    <option value="hard" selected>Hard (Smart AI)</option>
+  </select>
+  <button id="reset">Reset Game</button>
+</div>
+
+<div id="scoreboard">
+  <div class="score-box">Wins: <span id="wins">0</span></div>
+  <div class="score-box">Losses: <span id="losses">0</span></div>
+  <div class="score-box">Draws: <span id="draws">0</span></div>
+</div>
+
+<div id="board"></div>
+<div id="status">Your turn!</div>
+<script src="tictactoe.js"></script> 
+</body>
+</html>
+
